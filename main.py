@@ -1,16 +1,17 @@
 from fastapi import FastAPI
 from app.routes import chat
 
+#宣告並建立 FastAPI 伺服器實體
 app = FastAPI(
     title="Groq + Supabase Experiment",
     description="FastAPI backend for testing LLM with database context",
     version="0.1.0"
 )
 
-# Include routers
+# Include routers (main-> chat -> supabase -> chat -> groq)
 app.include_router(chat.router)
 
-
+# 這邊api放到render上後才須注意
 @app.get("/health")
 async def health_check():
     """Basic health check endpoint."""

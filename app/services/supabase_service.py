@@ -1,20 +1,52 @@
+# 引入 Groq 官方提供的 Python SDK
+# 引入專案的設定檔 (用來讀取.env -> config.py -> 這個檔案) 
 from supabase import create_client, Client
 from app.config import settings
 
-# Initialize Supabase client
+# Initialize Supabase client，建立與 Supabase 資料庫的專屬連線。
 supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
-# Placeholder: Replace with your actual table name
-TABLE_NAME = "your_table_name"
+# === 資料表名稱設定 (請替換成你 Supabase 裡實際的 Table Name) ===
+USER_PROFILE_TABLE = "your_user_profile_table"  # 例如: 'users' 或 'profiles'
+WATER_RECORD_TABLE = "your_water_record_table"  # 例如: 'water_logs' 或 'iot_records'
 
+#去指定的資料表（TABLE_NAME），撈取前 limit 筆資料
+# 以下範例片段，可自行按要抓資料包裝的欄位增減
 
-def fetch_data(limit: int = 10) -> list:
-    """Fetch data from the configured Supabase table."""
-    response = supabase.table(TABLE_NAME).select("*").limit(limit).execute()
+def fetch_recent_water_records(user_id: str, limit: int = 3) -> list:
+    """
+    從動態紀錄表中，撈取該使用者最近幾筆的「時間」與「數值」。
+    """
+    response = (
+        supabase.table(WATER_RECORD_TABLE)
+        # [修改重點 1] 限定欄位：請替換成實際欄位，例如: "amount_ml, record_time"
+        .select("your_amount_column, your_time_column")
+        # [修改重點 2] 限定對象：確保只撈出該位使用者
+        .eq("user_id", user_id)          
+        # [修改重點 4] 排序：讓最新的紀錄排在前面，這樣 AI 才不會拿舊資料回答
+        .order("your_time_column", desc=True) 
+        .limit(limit)                    
+        .execute()
+    )
+    return response.data
+
+def fetch_user_water_goal(user_id: str) -> dict:
+    """
+    從使用者資料表中，只撈取該使用者的「目標飲水量」等 AI 需要知道的基本資訊。
+    """
+    response = (
+        supabase.table(USER_PROFILE_TABLE)
+        # [修改重點 1] 限定欄位：請替換成實際欄位，例如: "daily_goal_ml, nickname"
+        .select("your_goal_column, your_name_column")
+        # [修改重點 2] 限定對象：確保只撈出該位使用者
+        .eq("user_id", user_id)  
+        # [修改重點 3] 因為每個 user_id 只會有一筆設定，用 .single() 直接回傳單一字典，不用 list
+        .single()                
+        .execute()
+    )
     return response.data
 
 
-def fetch_by_query(column: str, value: str) -> list:
-    """Fetch data filtered by a specific column value."""
-    response = supabase.table(TABLE_NAME).select("*").eq(column, value).execute()
-    return response.data
+
+
+

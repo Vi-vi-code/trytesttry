@@ -1,5 +1,3 @@
-## 記得要用venv再instal任何lib
-
 ## .env.example、佔位符用法
 1. Copy .env.example to .env and fill in your credentials: `copy .env.example .env` 
 2. Edit .env with your actual keys
@@ -7,6 +5,15 @@
 
 -> .env.example是解釋.env裡該有甚麼資料，要實作時複製內容到一個可以被讀取的.env檔，把真實key貼上改掉站位符
 
+## 記得要用venv再install任何lib, dependency
+1. Activate venv: `venv\Scripts\activate `
+2. Install dependencies: `pip install -r requirements.txt`
+3. Run the server:  `uvicorn main:app --reload`
+4. Test at http://localhost:8000/docs (Swagger UI) or:
+  curl -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d "{\"message\":        
+  \"test\"}"
+
+-> 參考用，記得verify
 
 ## 各檔案explanation
 1. /app/routes/chat.py -> RAG (從資料庫撈取資料作為背景知識，然後交給 AI 模型來回答使用者的問題)

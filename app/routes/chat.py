@@ -9,7 +9,7 @@ router = APIRouter()
 class ChatRequest(BaseModel):
     # 【重要修改】：強制前端發送訊息時，必須附上 user_id！
     # 這樣我們才知道要撈誰的喝水紀錄，AI 也不會把 A 的紀錄當成 B 的。
-    user_id: str
+    user_id: str # 動態查找當前登入 user_id
     message: str
 
 class ChatResponse(BaseModel):
@@ -28,14 +28,15 @@ async def chat(request: ChatRequest):
     """
     try:
         # --- 步驟 1：向 Supabase 索取原始資料 (呼叫我們剛改好的 supabase.py) ---
-        profile_data = supabase_service.fetch_user_water_goal(user_id=request.user_id)
+        goal_data = supabase_service.fetch_user_water_goal(user_id=request.user_id)
         records_data = supabase_service.fetch_recent_water_records(user_id=request.user_id, limit=3)
+        username_data = supabase_service.fetch_username(user_id=request.user_id)
 
         # --- 步驟 2：資料擺盤 (打包成乾淨的 Markdown 格式給 AI 看) ---
         
         # 安全地讀取資料 (使用 .get)，如果找不到資料就給予預設值，避免程式當機
-        daily_goal = profile_data.get("daily_goal_ml", "尚未設定") if profile_data else "尚未設定"
-        nickname = profile_data.get("nickname", "使用者") if profile_data else "使用者"
+        daily_goal = goal_data.get("daily_target", "尚未設定") if goal_data else "尚未設定"
+        nickname = username_data.get("username", "使用者") if username_data else "使用者"
 
         # 動態組裝 Context 字串
         context_str = f"## 使用者基本資料\n"
@@ -48,8 +49,8 @@ async def chat(request: ChatRequest):
         if records_data:
             for record in records_data:
                 # 這裡的 key 請對應你 supabase.py 裡面 select 出來的欄位名稱
-                time = record.get("record_time", "未知時間")
-                amount = record.get("amount_ml", 0)
+                time = record.get("record_at", "未知時間")
+                amount = record.get("d_volume", 0)
                 context_str += f"- 時間：{time} | 飲水量：{amount} ml\n"
         else:
             context_str += "- 尚無近期的飲水紀錄。\n"

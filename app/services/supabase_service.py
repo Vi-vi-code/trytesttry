@@ -7,8 +7,9 @@ from app.config import settings
 supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
 
 # === 資料表名稱設定 (請替換成你 Supabase 裡實際的 Table Name) ===
-USER_PROFILE_TABLE = "your_user_profile_table"  # 例如: 'users' 或 'profiles'
-WATER_RECORD_TABLE = "your_water_record_table"  # 例如: 'water_logs' 或 'iot_records'
+USER_PROFILE_TABLE = "users"  
+WATER_RECORD_TABLE = "drinking_logs"  # 例如: 'water_logs' 或 'iot_records'
+GOAL_TABLE= "goals"
 
 #去指定的資料表（TABLE_NAME），撈取前 limit 筆資料
 # 以下範例片段，可自行按要抓資料包裝的欄位增減
@@ -20,12 +21,28 @@ def fetch_recent_water_records(user_id: str, limit: int = 3) -> list:
     response = (
         supabase.table(WATER_RECORD_TABLE)
         # [修改重點 1] 限定欄位：請替換成實際欄位，例如: "amount_ml, record_time"
-        .select("your_amount_column, your_time_column")
+        .select("d_volume, record_at")
         # [修改重點 2] 限定對象：確保只撈出該位使用者
         .eq("user_id", user_id)          
         # [修改重點 4] 排序：讓最新的紀錄排在前面，這樣 AI 才不會拿舊資料回答
-        .order("your_time_column", desc=True) 
+        .order("record_at", desc=True) 
         .limit(limit)                    
+        .execute()
+    )
+    return response.data
+
+def fetch_username(user_id: str) -> dict:
+    """
+    從使用者資料表中，只撈取該使用者的「使用者名稱」等 AI 需要知道的基本資訊。
+    """
+    response = (
+        supabase.table(USER_PROFILE_TABLE)
+        # [修改重點 1] 限定欄位：請替換成實際欄位，例如: "daily_goal_ml, nickname"
+        .select("username")
+        # [修改重點 2] 限定對象：確保只撈出該位使用者
+        .eq("user_id", user_id)  
+        # [修改重點 3] 因為每個 user_id 只會有一筆設定，用 .single() 直接回傳單一字典，不用 list
+        .single()                
         .execute()
     )
     return response.data
@@ -35,9 +52,9 @@ def fetch_user_water_goal(user_id: str) -> dict:
     從使用者資料表中，只撈取該使用者的「目標飲水量」等 AI 需要知道的基本資訊。
     """
     response = (
-        supabase.table(USER_PROFILE_TABLE)
-        # [修改重點 1] 限定欄位：請替換成實際欄位，例如: "daily_goal_ml, nickname"
-        .select("your_goal_column, your_name_column")
+        supabase.table(GOAL_TABLE)
+        # [修改重點 1] 限定欄位：請替換成實際欄位，例如: "nickname"
+        .select("daily_target")
         # [修改重點 2] 限定對象：確保只撈出該位使用者
         .eq("user_id", user_id)  
         # [修改重點 3] 因為每個 user_id 只會有一筆設定，用 .single() 直接回傳單一字典，不用 list

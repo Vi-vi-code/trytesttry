@@ -4,11 +4,13 @@ from typing import Optional
 from app.schemas.drinking_log import DrinkingLogCreate, DrinkingLogResponse, DrinkingLogUpdate
 from app.services.drinking_log_service import create_log, soft_delete_log, get_logs, update_log
 
-router = APIRouter()
+# 「接收參數」、「檢查 HTTP 狀態」以及「處理錯誤訊息」
 
+router = APIRouter()
+# 定義api呼叫的http status code回應與 回傳格式，前端http請求-> routes -> schemas -> routes -> services
 @router.post("", response_model=DrinkingLogResponse, status_code=201)
 def add_log(body: DrinkingLogCreate):
-    data = body.model_dump()
+    data = body.model_dump() # 前端傳來並通過驗證的 Pydantic 模型轉換成 Python 的字典
     data["record_at"] = data["record_at"].isoformat()
     return create_log(data)
 

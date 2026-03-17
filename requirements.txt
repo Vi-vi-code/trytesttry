@@ -3,3 +3,5 @@ uvicorn
 python-dotenv
 groq
 supabase
+passlib[bcrypt]
+python-jose[cryptography]

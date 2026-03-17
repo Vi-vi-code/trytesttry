@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routes import chat, drinking_logs
+from app.routes import chat, drinking_logs, auth
 
 #宣告並建立 FastAPI 伺服器實體
 app = FastAPI(
@@ -10,6 +10,7 @@ app = FastAPI(
 
 # Include routers (main-> chat -> supabase -> chat -> groq)
 app.include_router(chat.router)
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(drinking_logs.router, prefix="/logs", tags=["drinking_logs"])
 
 # 這邊api放到render上後才須注意
